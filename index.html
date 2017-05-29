@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Automata</title>
+    <style>
+      * {
+        cell-sizing: border-cell;
+      }
+
+      body {
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        min-height: 100vh;
+        overflow: hidden;
+      }
+
+      header {
+        background-color: #ffaf68;
+        border-bottom: 3px solid #333;
+      }
+
+      h1 {
+        font-size: 4rem;
+        font-weight: normal;
+        text-align: center;
+        color: #333;
+        margin: 1rem 0 0 0;
+      }
+
+      input {
+        width: 100%;
+        padding: 1rem;
+        font-size: 2rem;
+        background-color: transparent;
+        color: #555;
+        text-align: center;
+        border: none;
+        outline: none;
+      }
+
+      /*main {*/
+      #game {
+        background-color: peachpuff;
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+      }
+
+      .row {
+        width: 100%;
+        height: 10px;
+        display: flex;
+      }
+
+      .cell {
+        display: inline-block;
+        width: 10px;
+        height: 10px;
+        /*border: 1px solid #999;*/
+        flex: 0 0 10px;
+      }
+
+      .alive {
+        background-color: #555;
+      }
+    </style>
+  </head>
+  <body onload="onresize()">
+    <header>
+      <h1>Rule</h1>
+      <input id="input" type="number" value="73" onkeyup="rerenderOffscreen()" autofocus>
+    </header>
+    <!-- <main></main> -->
+    <canvas id="game"></canvas>
+
+    <script>
+      'use strict';
+      const CELL_SIZE = 10
+
+      function createOffscreenCanvas () {
+        const canvas = document.querySelector('#game')
+        const offscreenCanvas = document.createElement('canvas')
+        offscreenCanvas.width = canvas.width
+        offscreenCanvas.height = canvas.height
+        return offscreenCanvas
+      }
+
+      function render (context) {
+        const rule = document.getElementById('input').value
+        const rows = Math.ceil(context.canvas.height / CELL_SIZE)
+        const cols = Math.ceil(context.canvas.width / CELL_SIZE)
+
+        // Generate game state
+        const state = new Array(rows)
+        for (let r = 0; r < rows; r++) {
+          state[r] = new Array(cols)
+          for (let c = 0; c < cols; c++) {
+            if (r === 0) { // first row
+              state[r][c] = Math.random() < 0.5
+            } else {
+              const previousGeneration = state[r - 1]
+              const index =
+                4 * previousGeneration[(c - 1 + cols) % cols] +
+                2 * previousGeneration[c] +
+                1 * previousGeneration[(c + 1) % cols]
+              state[r][c] = Boolean((rule >> index) & 1)
+            }
+          }
+        }
+
+        // Fill alive cells
+        context.fillStyle = 'rgba(0, 0, 0, 0.87)'
+        for (let r = 0; r < rows; r++) {
+          for (let c = 0; c < cols; c++) {
+            const isAlive = state[r][c]
+            if (isAlive) {
+              context.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE)
+            }
+          }
+        }
+      }
+
+      function rerenderOffscreen () {
+        const canvas = document.querySelector('#game')
+        if (canvas.getContext) {
+          const offscreenCanvas = createOffscreenCanvas()
+          const offscreenContext = offscreenCanvas.getContext('2d')
+          render(offscreenContext)
+          const context = canvas.getContext('2d')
+          context.clearRect(0, 0, canvas.width, canvas.height);
+          context.drawImage(offscreenCanvas, 0, 0)
+        }
+      }
+
+      function scaleCanvas () {
+        const canvas = document.querySelector('#game')
+        canvas.width = canvas.clientWidth
+        canvas.height = canvas.clientHeight
+      }
+
+      window.onresize = function () {
+        scaleCanvas()
+        rerenderOffscreen()
+      }
+
+      // function update() {
+      //   const rule = document.getElementById('input').value
+      //   const rows = document.querySelectorAll('.row')
+      //
+      //   for (let r = 0; r < rows.length; r++) {
+      //     const row = rows[r]
+      //     const cells = row.querySelectorAll('.cell')
+      //
+      //     const rowAbove = rows[r - 1]
+      //
+      //     const cellsAbove = rowAbove ? rowAbove.querySelectorAll('.cell') : null
+      //     for (let c = 0; c < cells.length; c++) {
+      //       const cell = cells[c]
+      //
+      //       let alive
+      //       if (cellsAbove) {
+      //         const cellL = cellsAbove[(c - 1 + cells.length) % cells.length]
+      //         const cellC = cellsAbove[c]
+      //         const cellR = cellsAbove[(c + 1) % cells.length]
+      //         const aliveL = cellL ? cellL.classList.contains('alive') : false
+      //         const aliveC = cellC ? cellC.classList.contains('alive') : false
+      //         const aliveR = cellR ? cellR.classList.contains('alive') : false
+      //
+      //         const shiftAmount = aliveL * 4 + aliveC * 2 + aliveR
+      //         alive = ((rule >> shiftAmount) & 1)
+      //       } else {
+      //         alive = Math.random() < 0.5
+      //       }
+      //
+      //       if (alive) {
+      //         cell.classList.add('alive')
+      //       } else {
+      //         cell.classList.remove('alive')
+      //       }
+      //     }
+      //   }
+      // }
+    </script>
+  </body>
+</html>
